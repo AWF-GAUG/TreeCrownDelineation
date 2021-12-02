@@ -1,9 +1,0 @@
-# Data Loading
-
-This descibes the data loading workflow in pytorch lightning in general and in this repo in particular, as the data loading is a bit messy.
-
-Data loading is done via the pytorch lightning `LightninghDataModule`, which is described [here](https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html). Usually it contains one to three pytorch `DataLoader`s, one for training, validation and testing. Pytorch dataloaders are described [here](https://pytorch.org/tutorials/beginner/basics/data_tutorial.html). A pytorch dataloader consumes its data from a [Dataset](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) or an `IterableDataset`. A Dataset is just a class which holds your data and has `__getitem__()` and `__len__()` defined. An `IterableDataset` defines how to iterate the data via `__iter__()`. If data should be loaded in parallel, the `DataLoader` can spool-up several subprocesses. To make this work, one has to define a `worker_init_fn()` function for the dataset in use, which specifies how to split the data between workers. **Currently, parallel data loading is not supported.**
-
-This repo provides an `InMemoryRSDataset` (**R**emote **S**ensing Dataset), which holds all training data in RAM, because our datasets are small and RAM is large. The dataset can handle georeferenced images and **expects tif files**. That dataset is wrapped in a `InMemoryRSTorchDataset`, which defines how to iterate over the data infinitely, providing augmented cutouts from the loaded images. The `InMemoryDataModule` is a pytorch lightning datamodule which sets the underlying datasets up, including train/val split and some processing. The `InMemoryMaskDataModule` is a convenience wrapper and defines some standard augmentations. So concretely the callstack looks something like this, in the end:
-
-Training step 🡰 `DataLoader` (pytorch) 🡰 `InMemoryRSTorchDataset` (user defined)
