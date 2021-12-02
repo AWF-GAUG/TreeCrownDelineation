@@ -8,12 +8,13 @@ import numpy as np
 import pickle
 from torch.nn import DataParallel
 from torch.nn import UpsamplingBilinear2d, Sequential
-from modules import utils
-from modules.indices import ndvi
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from modules.postprocessing import extract_polygons
 from time import time
 from fiona import crs
+from treecrowndelineation.modules import utils
+from treecrowndelineation.modules.indices import ndvi
+from treecrowndelineation.modules.postprocessing import extract_polygons
+
 
 #%%
 def get_parser():

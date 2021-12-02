@@ -34,5 +34,6 @@ setup(name=NAME,
                         "scipy",
                         "scikit-image",
                         "hyperopt",
-                        "fiona"],
+                        "fiona",
+                        "psutil"],
       zip_safe=False)

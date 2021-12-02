@@ -25,6 +25,8 @@ python ./setup.py install
 
 ## 2 Training a model from scratch
 
+The package is designed to work with georeferenced imagery and vector data. This means you can select your training plots in e.g. QGIS, delineate the trees within, save a shapefile containing the tree crown polygons, rasterize the polyongs into masks using the shipped scripts and run the training.
+
 ## 3 Using pre-trained models
 
 ## 4 Application / Inference
