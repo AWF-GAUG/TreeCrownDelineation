@@ -27,13 +27,14 @@ fiona.drvsupport.supported_drivers["SQLite"] = "rw"
 
 def get_parser():
     parser = ArgumentParser(description="Takes a list of rasters and rasterizes shapely polygons on them."
-                                        "The polygons are distance-transformed and normalized to the maximum distance.",
+                                        "The polygons are distance-transformed and normalized on a per-polygon basis "
+                                        "to the maximum distance.",
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument("-i", "--input_file",
                         dest="input_files",
                         type=str,
                         nargs='+',
-                        help="Input raster file. If the file name is given in the form name_id.xyz the underscore-\
+                        help="Input raster file(s). If the file name is given in the form name_id.xyz the underscore-\
                              separated id can optionally be used to infer the output raster names by giving --infer_names.",
                         required=True)
     parser.add_argument("-o", "--output",

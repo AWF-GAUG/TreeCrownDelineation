@@ -19,10 +19,6 @@ masks = ""
 outlines = ""
 dist = ""
 
-rasters_pretrain = ""
-masks_pretrain = ""
-outlines_pretrain = ""
-
 logdir = ""
 model_save_path = ""
 experiment_name = ""
@@ -34,16 +30,15 @@ in_channels = 8
 gpus = 2
 backend = "dp"
 max_epochs = 30 + 60 - 1
-max_pretrain_epochs = 200
 lr = 3E-4
 
 training_split = 0.8
 
-model_name = "{}_epochs={}_lr={}_width={}_bs={}_ts=1".format(arch,
-                                                             max_epochs,
-                                                             lr,
-                                                             width,
-                                                             batchsize)
+model_name = "{}_epochs={}_lr={}_width={}_bs={}".format(arch,
+                                                        max_epochs,
+                                                        lr,
+                                                        width,
+                                                        batchsize)
 
 #%%
 ###################################
@@ -56,7 +51,7 @@ logger = TensorBoardLogger(logdir,
 
 cp = ModelCheckpoint(os.path.abspath(model_save_path) + "/" + experiment_name,
                      model_name + "-{epoch}",
-                     monitor="train/loss",
+                     monitor="val/loss",
                      save_last=True,
                      save_top_k=2)
 
