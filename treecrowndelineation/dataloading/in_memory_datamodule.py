@@ -4,8 +4,8 @@ import numpy as np
 import albumentations as A
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from dataloading import datasets as ds
-from modules.utils import dilate_img
+from ..dataloading import datasets as ds
+from ..modules.utils import dilate_img
 
 
 class InMemoryDataModule(pl.LightningDataModule):
