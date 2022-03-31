@@ -3,9 +3,8 @@ import os
 import numpy as np
 from glob import glob
 
-
-import osgeo.gdalnumeric as gdn
 from osgeo import gdal, osr, ogr
+from osgeo import gdalnumeric as gdn
 
 # import shapely
 import fiona
@@ -15,7 +14,7 @@ from shapely.geometry import shape, Polygon
 from shapely.strtree import STRtree
 
 from itertools import islice, repeat
-from scipy.ndimage.morphology import distance_transform_edt
+from scipy.ndimage import distance_transform_edt
 from scipy.ndimage import sobel, convolve
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 # from matplotlib import pyplot as plt
@@ -79,8 +78,9 @@ def get_xarray_trafo(arr):
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
-    xres, yres = (arr.transform[0], arr.transform[4])
-    xskew, yskew = (arr.transform[1], arr.transform[3])
+    gt = [float(x) for x in arr.spatial_ref.GeoTransform.split()]
+    xres, yres = (gt[1], gt[5])
+    xskew, yskew = (gt[2], gt[4])
     return xres, xskew, min(xr), yskew, yres, max(yr)
 
 
@@ -91,7 +91,8 @@ def get_xarray_extent(arr):
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
-    xres, yres = (arr.transform[0], arr.transform[4])
+    gt = [float(x) for x in arr.spatial_ref.GeoTransform.split()]
+    xres, yres = (gt[1], gt[5])
     return min(xr), max(xr), min(yr), max(yr), xres, yres
 
 
@@ -184,8 +185,8 @@ def work(f, args):
     shpfile_path = args.shapefile
     area_max = args.area_max
 
-    print(args.class_col_name)
-    print(args.cls)
+    # print(args.class_col_name)
+    # print(args.cls)
 
     valid_classes = [int(i) for i in args.cls.split(",") if i]
     input_file = os.path.abspath(f)
@@ -195,9 +196,9 @@ def work(f, args):
     output_file = os.path.abspath(args.output) + suffix + ".tif"
     print(output_file)
 
-    img = xr.open_rasterio(f)
+    img = rioxarray.open_rasterio(f)
     mask = xr.zeros_like(img[[0]]).astype("float32")  # dirty hack to get three layers
-    fix_xarray_metadata(mask, [0])
+    # fix_xarray_metadata(mask, [0])
 
     # bbox = extent_to_poly(img)
     # features = strtree.query(bbox)
@@ -216,8 +217,6 @@ def work(f, args):
     # mask[0] = mask[0] / np.max(mask[0])
     # norm = np.linalg.norm(mask[1:], axis=0) + 1E-5
     # mask[1:] /= norm
-
-
 
     xmin, xmax, ymin, ymax, _, _ = get_xarray_extent(img)
     with fiona.open(shpfile_path, "r") as features:
@@ -258,7 +257,7 @@ def work(f, args):
 
             padded = np.pad(rasterized,1)
             distance_transformed = distance_transform_edt(padded)[1:-1,1:-1].astype("float32")
-            distance_transformed /= np.max(distance_transformed)
+            distance_transformed /= max(np.max(distance_transformed), 1)
             polygon_area[0] = distance_transformed
             mask.loc[:, ymax_p:ymin_p, xmin_p:xmax_p] += polygon_area
             # transformed_polygon = shapely.affinity.affine_transform(p, (1/xres, 0, 0, 1/yres, -xmin/xres, -ymax/yres))
@@ -270,6 +269,7 @@ def work(f, args):
 #%%
 if __name__ == '__main__':
     args = get_parser().parse_args()
+    # args = get_parser().parse_args("-i /data_hdd/bkg/training/tiles/tile_4026.tif -o /tmp/deleteme/dist_ -shp /data_hdd/bkg/training/training_labels_bkg_2022-02-15.sqlite".split())
     # args = get_parser().parse_args("-i /data/bangalore/training_data/treecrown_delineation/tiles/tile_WV3_Pansharpen_11_2016_9.tif -o ./asdf_ -shp /data/bangalore/training_data/treecrown_delineation/treecrown_delineation_north_2016.sqlite".split())
     # args = get_parser().parse_args("-i /home/max/dr/gartow/masks/mask_100.tif -o ./asdf_ -shp "
     #                                "/data/gartow/vector/polygons.sqlite".split())

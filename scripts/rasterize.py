@@ -104,8 +104,9 @@ def get_xarray_trafo(arr):
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
-    xres, yres = (arr.transform[0], arr.transform[4])
-    xskew, yskew = (arr.transform[1], arr.transform[3])
+    gt = [float(x) for x in arr.spatial_ref.GeoTransform.split()]
+    xres, yres = (gt[1], gt[5])
+    xskew, yskew = (gt[2], gt[4])
     return xres, xskew, min(xr), yskew, yres, max(yr)
 
 
@@ -116,7 +117,8 @@ def get_xarray_extent(arr):
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
-    xres, yres = (arr.transform[0], arr.transform[4])
+    gt = [float(x) for x in arr.spatial_ref.GeoTransform.split()]
+    xres, yres = (gt[1], gt[5])
     return min(xr), max(xr), min(yr), max(yr), xres, yres
 
 
@@ -201,7 +203,7 @@ def filter_geometry(src, args):
 def to_outline(polygons):
     return (p.boundary for p in polygons)
 
-
+#%%
 if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
@@ -220,7 +222,7 @@ if __name__ == '__main__':
 
             print(output_file)
 
-            img = xr.open_rasterio(f)
+            img = rioxarray.open_rasterio(f)
             bbox = extent_to_poly(img)
             features = src.filter(bbox=bbox.bounds)
 
