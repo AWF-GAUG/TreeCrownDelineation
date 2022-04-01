@@ -22,6 +22,8 @@ class InMemoryDataModule(pl.LightningDataModule):
                  red=None,
                  nir=None,
                  divide_by=1,
+                 normalize=False,
+                 normalization_function=None,
                  dilate_second_target_band=False,
                  shuffle=True,
                  deterministic=True,
@@ -50,7 +52,12 @@ class InMemoryDataModule(pl.LightningDataModule):
                 appended to the rasters.You have to get the red and near IR band indices.
             red (int): Index of the red band, starting from 0.
             nir (int): Index of the near IR band, starting from 0.
-            divide_by (float): Constant value to divide the rasters by. Default: 1.
+            divide_by (float): Constant value to divide the rasters by. Exclusive with 'normalize' and
+                'normalization_function'. Default: 1.
+            normalize (bool): Normalizes the dataset to 0 mean and standard deviation 1. Exclusive with 'divide_by' and
+                'normalization_function'.
+            normalization_function: A function, which is applied to all images. Optional NDVI concatenation happens after
+                applying the function. Exclusive with 'divide_by' and 'normalize'.
             dilate_second_target_band (int): The second target band (the tree outlines) can be dilated (widened) by a
                 certain number of pixels.
             shuffle (bool): Whether or not to shuffle the data upon loading. This affects the partition into
@@ -89,6 +96,8 @@ class InMemoryDataModule(pl.LightningDataModule):
         self.train_indices = train_indices
         self.val_indices = val_indices
         self.divide_by = divide_by
+        self.normalize = normalize
+        self.normalization_function = normalization_function
         self.train_ds = None
         self.val_ds = None
         self.rescale_ndvi = rescale_ndvi
@@ -122,6 +131,13 @@ class InMemoryDataModule(pl.LightningDataModule):
                                                   dim_ordering="HWC",
                                                   divide_by=self.divide_by)
 
+        if sum([self.divide_by != 1, self.normalization_function is not None, self.normalize]) > 1:
+            raise RuntimeError("Please provide either 'divide_by', 'normalize' or 'normalization_function' as argument.")
+        elif self.normalization_function is not None:
+            self.train_ds.apply_to_rasters(self.normalization_function)
+        elif self.normalize:
+            self.train_ds.normalize()
+
         if self.training_split < 1 or self.val_indices is not None:
             self.val_ds = ds.InMemoryRSTorchDataset(validation_data[0],
                                                     validation_data[1:],
@@ -129,6 +145,11 @@ class InMemoryDataModule(pl.LightningDataModule):
                                                     cutout_size=(self.width, self.width),
                                                     dim_ordering="HWC",
                                                     divide_by=self.divide_by)
+
+            if self.normalization_function is not None:
+                self.val_ds.apply_to_rasters(self.normalization_function)
+            elif self.normalize:
+                self.val_ds.normalize()
 
         # attach the NDVI to the rasters
         if self.concatenate_ndvi and self.red is not None and self.nir is not None:
