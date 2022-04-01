@@ -200,6 +200,8 @@ class InMemoryMaskDataModule(InMemoryDataModule):
                  red=None,
                  nir=None,
                  divide_by=1,
+                 normalize=False,
+                 normalization_function=None,
                  dilate_second_target_band=False,
                  shuffle=True,
                  deterministic=True,
@@ -210,15 +212,15 @@ class InMemoryMaskDataModule(InMemoryDataModule):
         """
         Please look at the documentation for `InMemoryDataModule`.
         """
-        train_augmentation = A.Compose([  #A.RandomResizedCrop(width, width, scale=(0.25, 1.), always_apply=True),
-            A.RandomCrop(width, width, always_apply=True),
+        train_augmentation = A.Compose([#A.RandomResizedCrop(width, width, scale=(0.25, 1.), always_apply=True),
+                                        A.RandomCrop(width, width, always_apply=True),
                                         A.RandomRotate90(),
                                         A.VerticalFlip(),
-            #A.RandomGamma(gamma_limit=(70, 130))
+                                        #A.RandomGamma(gamma_limit=(70, 130))
                                         ])
         val_augmentation = A.RandomCrop(width, width, always_apply=True)
 
         super().__init__(rasters, targets, training_split, batchsize, width,
                          train_augmentation, val_augmentation, use_last_target_as_mask,
-                         concatenate_ndvi, red, nir, divide_by, dilate_second_target_band, shuffle, deterministic,
-                         train_indices, val_indices, rescale_ndvi)
+                         concatenate_ndvi, red, nir, divide_by, normalize, normalization_function,
+                         dilate_second_target_band, shuffle, deterministic, train_indices, val_indices, rescale_ndvi)
