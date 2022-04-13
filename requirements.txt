@@ -1,0 +1,15 @@
+torch
+pytorch_lightning
+numpy
+segmentation_models_pytorch
+albumentations
+xarray
+rasterio
+rioxarray
+shapely
+gdal
+scipy
+scikit-image
+hyperopt
+fiona
+psutil
