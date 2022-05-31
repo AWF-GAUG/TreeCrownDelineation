@@ -52,10 +52,14 @@ def get_parser():
                         type=int,
                         help="Number of parallel threads to execute.",
                         default=1)
-    parser.add_argument("-a",
+    parser.add_argument("-amax",
                         dest="area_max",
                         help="Maximum polygon area in map units, e.g. m2",
                         default=None)
+    parser.add_argument("-amin",
+                        dest="area_min",
+                        help="Minimum polygon area in map units, e.g. m2",
+                        default=3)
     parser.add_argument("-ccn", "--class_col_name",
                         default=None,
                         help="Name of the class column. In conjunction with -cls this can be used to rasterize only "
@@ -184,11 +188,16 @@ def to_outline(polygons):
 def work(f, args):
     shpfile_path = args.shapefile
     area_max = args.area_max
+    area_min = args.area_min
 
     # print(args.class_col_name)
-    # print(args.cls)
+    # print(args.cls.split(","))
 
-    valid_classes = [int(i) for i in args.cls.split(",") if i]
+    valid_classes = [int(i) for i in args.cls.split(",") if i not in ("None", "NULL")]
+    if "None" in args.cls.split(",") or "NULL" in args.cls.split(","):
+        valid_classes.append(None)
+    # print(valid_classes)
+
     input_file = os.path.abspath(f)
     input_path, input_fname = os.path.split(input_file)
     suffix = input_fname.split('.')[0].split("_")[-1]
@@ -222,7 +231,7 @@ def work(f, args):
     with fiona.open(shpfile_path, "r") as features:
         haskey = args.class_col_name in features.schema["properties"].keys()
         if not haskey:
-            print("Vector data has no class field, attempting anyway.")
+            print("Vector data has no class field {}, attempting anyway.".format(args.class_col_name))
 
         features = features.filter(bbox=(xmin, ymin, xmax, ymax))
 
@@ -231,15 +240,20 @@ def work(f, args):
             i += 1
             if haskey:
                 cls = f["properties"][args.class_col_name]
+                # print(cls)
                 if cls not in valid_classes:
-                    print("skipping polygon with id ", f["id"])
+                    print("skipping polygon of unmatched class with id ", f["id"])
                     continue
 
             p = shape(f["geometry"])
             if area_max is not None:
                 if p.area > area_max:
-                    print("skipping polygon with id  ", f["id"])
+                    print("skipping too large polygon with id  ", f["id"])
                     continue
+
+            if p.area < area_min:
+                print("skipping too small polygon with id  ", f["id"])
+                continue
 
             xmin_p, ymin_p, xmax_p, ymax_p = p.bounds
             polygon_area = mask.loc[:, ymax_p:ymin_p, xmin_p:xmax_p].astype("float32")

@@ -3,11 +3,11 @@ import pytorch_lightning as pl
 from .segmentation_model import SegmentationModel
 from .distance_model import DistanceModel
 from ..modules import metrics
-from ..modules.losses import BinarySegmentationLoss
+from ..modules.losses import BinarySegmentationLossWithLogits
 
 
 class TreeCrownDelineationModel(pl.LightningModule):
-    def __init__(self, segmentation_model=None, distance_model=None, in_channels=None, lr: float = 1E-4):
+    def __init__(self, segmentation_model=None, distance_model=None, in_channels=None, lr=1E-4, apply_sigmoid=False):
         """Tree crown delineation model
 
         The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
@@ -32,11 +32,16 @@ class TreeCrownDelineationModel(pl.LightningModule):
                              "'in_channels'.")
 
         self.lr = lr
+        self.apply_sigmoid = apply_sigmoid
 
     def forward(self, img):
-        mask_and_outline = torch.sigmoid(self.seg_model(img))
-        dist = self.dist_model(img, mask_and_outline, from_logits=False)
-        return torch.cat((mask_and_outline, dist), dim=1)
+        mask_and_outline = self.seg_model(img)
+        dist = self.dist_model(img, mask_and_outline, from_logits=True)
+        # dist = dist * mask_and_outline[:, [0]]
+        if self.apply_sigmoid:
+            return torch.cat((torch.sigmoid(mask_and_outline), dist), dim=1)
+        else:
+            return torch.cat((mask_and_outline, dist), dim=1)
 
     def shared_step(self, batch):
         x, y = batch
@@ -50,11 +55,11 @@ class TreeCrownDelineationModel(pl.LightningModule):
         outline_t = y[:, 1]
         dist_t    = y[:, 2]
 
-        iou_mask = metrics.iou(mask, mask_t)
-        iou_outline = metrics.iou(outline, outline_t)
+        iou_mask = metrics.iou(torch.sigmoid(mask), mask_t)
+        iou_outline = metrics.iou(torch.sigmoid(outline), outline_t)
 
-        loss_mask = BinarySegmentationLoss()(mask, mask_t)
-        loss_outline = BinarySegmentationLoss()(outline, outline_t)
+        loss_mask = BinarySegmentationLossWithLogits(reduction="mean")(mask, mask_t)
+        loss_outline = BinarySegmentationLossWithLogits(reduction="mean")(outline, outline_t)
         loss_distance = torch.mean((dist - dist_t) ** 2)
 
         # lower mask loss results in unlearning the masks
