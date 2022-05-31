@@ -178,11 +178,6 @@ if __name__ == '__main__':
     model = DataParallel(model)
     model.eval()
 
-    try:
-        model.apply_sigmoid = True
-    except AttributeError:
-        pass
-
     array = xr.open_rasterio(args.input_file)
     nbands, height, width = array.shape
 

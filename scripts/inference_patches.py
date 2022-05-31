@@ -158,11 +158,6 @@ if __name__ == '__main__':
     model = DataParallel(model)
     model.eval()
 
-    try:
-        model.apply_sigmoid = True
-    except AttributeError:
-        pass
-
     inference_time = 0
     postprocessing_time = 0
     disk_loading_time = 0
