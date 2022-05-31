@@ -14,6 +14,7 @@ from fiona import crs
 from treecrowndelineation.modules import utils
 from treecrowndelineation.modules.indices import ndvi
 from treecrowndelineation.modules.postprocessing import extract_polygons
+from treecrowndelineation.model.inference_model import InferenceModel
 
 
 #%%
@@ -174,6 +175,8 @@ if __name__ == '__main__':
     if args.upsample != 1:
         model = Sequential(UpsamplingBilinear2d(scale_factor=args.upsample), model, UpsamplingBilinear2d(
                 scale_factor=1. / args.upsample))
+
+    model = InferenceModel(model)  # apply sigmoid to mask and outlines
 
     model = DataParallel(model)
     model.eval()
