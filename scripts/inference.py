@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import fiona.errors
 import torch
 import psutil
@@ -15,9 +16,9 @@ from treecrowndelineation.modules import utils
 from treecrowndelineation.modules.indices import ndvi
 from treecrowndelineation.modules.postprocessing import extract_polygons
 from treecrowndelineation.model.inference_model import InferenceModel
+from treecrowndelineation.model.averaging_model import AveragingModel
 
 
-#%%
 def get_parser():
     parser = ArgumentParser(description="This tool allows segmentation inference on large images, e.g. GeoTiff.",
                             formatter_class=ArgumentDefaultsHelpFormatter)
@@ -35,11 +36,12 @@ def get_parser():
     parser.add_argument("-m", "--model",
                         dest="model",
                         type=str,
-                        help="Path to the model file to load. "
-                             "The model must be loadable via torch.jit.load(), which means that "
-                             "it has to be scripted or traced beforehand. For lighning models, use "
-                             "to_torchscript().",
-                        required=True)
+                        help="Path(s) to the model file(s) to load. "
+                             "The model(s) must be loadable via torch.jit.load(), which means that "
+                             "it has to be scripted or traced beforehand. For lightning models, use "
+                             "to_torchscript(). If more than one model is given, the model outputs will be averaged.",
+                        required=True,
+                        nargs='*')
     parser.add_argument("-d", "--device",
                         dest="device",
                         type=str,
@@ -138,6 +140,15 @@ def get_parser():
     return parser
 
 
+def get_crs(array):
+    crs_ = array.attrs["crs"]
+    if "epsg" in crs_:
+        crs_ = crs.from_epsg(crs_.split(':')[-1])
+    else:
+        crs_ = crs.from_string(crs_)
+    return crs_
+
+
 if __name__ == '__main__':
     args = get_parser().parse_args()
     # args = get_parser().parse_args("-i /data/bangalore/raster/WV3_2016-11_north.tif "
@@ -168,7 +179,19 @@ if __name__ == '__main__':
                                  }
 
     print("Loading model")
-    model = torch.jit.load(args.model).to("cuda")
+    
+    model_names = args.model
+    
+    if isinstance(model_names, str):
+        model = torch.jit.load(args.model).to(args.device)
+    elif isinstance(model_names, list):
+        models = [torch.jit.load(m).to(args.device) for m in model_names]
+        model = AveragingModel(models)
+    else:
+        print("Error during model loading.")
+        sys.exit(1)
+
+    print("Model loaded")
 
     stride = args.stride or args.width - 32 - args.width // 10
 
@@ -289,9 +312,12 @@ if __name__ == '__main__':
         print("Inference time: {}s".format(int(inference_time)))
         print("Post-processing time: {}s".format(int(postprocessing_time)))
         print("Saving as {}".format(args.output_file))
+
+        crs_ = get_crs(array)
+
         utils.save_polygons(polygons,
                             args.output_file,
-                            crs=crs.from_epsg(array.attrs["crs"].split(':')[-1]))
+                            crs=crs_)
         print("Done.")
 
     except (MemoryError, KeyboardInterrupt, ValueError) as e:
@@ -305,7 +331,7 @@ if __name__ == '__main__':
         print("Saving as {}".format(args.output_file))
         utils.save_polygons(polygons,
                             args.output_file,
-                            crs=crs.from_epsg(array.attrs["crs"].split(':')[-1]))
+                            crs=get_crs(array))
         print("Errors were encountered during processing, see above. Polygons found so far have been saved.")
 
     except fiona.errors.CRSError as e:
