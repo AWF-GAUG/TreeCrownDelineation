@@ -229,7 +229,7 @@ if __name__ == '__main__':
         inference_time += t3 - t2
 
         if args.save_prediction is not None:
-            utils.array_to_tif(result.transpose(1, 2, 0),
+            utils.array_to_tif(result["prediction"].transpose(1, 2, 0),
                                os.path.abspath(args.save_prediction) + '/' + filename + "_pred.tif",
                                transform=utils.xarray_trafo_to_gdal_trafo(chunk.attrs["transform"]),
                                crs=array.attrs["crs"])
@@ -244,14 +244,14 @@ if __name__ == '__main__':
             args.sigma /= 2
             args.min_dist /= 2
 
-            polygons.extend(extract_polygons(*result[:, ::2, ::2],
+            polygons.extend(extract_polygons(*result["prediction"][:, ::2, ::2],
                                              transform=trafo,
                                              area_min=3,
                                              **polygon_extraction_params))
 
         else:
             trafo = utils.get_xarray_trafo(chunk)
-            polygons.extend(extract_polygons(*result,
+            polygons.extend(extract_polygons(*result["prediction"],
                                              transform=trafo,
                                              area_min=3,
                                              **polygon_extraction_params))

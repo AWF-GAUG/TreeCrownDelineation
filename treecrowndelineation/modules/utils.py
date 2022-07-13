@@ -509,8 +509,7 @@ def predict_on_array_cf(model,
                         augmentation=False,
                         no_data=None,
                         verbose=False,
-                        report_time=False,
-                        return_data_region=False):
+                        aggregate_metric=False):
     """
     Applies a pytorch segmentation model to an array in a strided manner.
 
@@ -527,14 +526,15 @@ def predict_on_array_cf(model,
         augmentation: whether to average over rotations and mirrorings of the image or not. triples computation time.
         no_data: a no-data vector. its length must match the number of layers in the input array.
         verbose: whether or not to display progress
-        report_time: if true, returns (result, execution time)
+        aggregate_metric: This is for development purposes or for active learning. In case the model returns
+            (prediction, some_metric), some_metric will be summed up for all predictions necessary to process the
+            input image. The model can then e.g. be an ensemble model, returning the result and the variance.
 
     Returns:
-        An array containing the segmentation.
+        A dict containing result, time, nodata_region and time
     """
-    t0 = None
-
-    # model.eval()
+    t0 = time.time()
+    metric = 0
 
     if augmentation:
         operations = (lambda x: x,
@@ -571,10 +571,11 @@ def predict_on_array_cf(model,
         # data_mask = np.all(arr[:,:,0].reshape( (-1,arr.shape[-1]) ) != no_data, axis=1).reshape(arr.shape[:2])
         nonzero = np.nonzero(arr[0, :, :] - no_data)
         if len(nonzero[0]) == 0:
-            if return_data_region:
-                return None, (0, 0, 0, 0)
-            else:
-                return None
+            return {"prediction": None,
+                    "time": time.time() - t0,
+                    "nodata_region": (0, 0, 0, 0),
+                    "metric": metric}
+
         ymin = np.min(nonzero[0])
         ymax = np.max(nonzero[0])
         xmin = np.min(nonzero[1])
@@ -633,6 +634,10 @@ def predict_on_array_cf(model,
 
             with torch.no_grad():
                 prediction = model(torch.from_numpy(batch).to(device=device, dtype=torch.float32))
+                if aggregate_metric:
+                    metric += prediction[1].cpu().numpy()
+                    prediction = prediction[0]
+
                 prediction = prediction.detach().cpu().numpy()
             if drop_border > 0:
                 prediction = prediction[:, :, drop_border:-drop_border, drop_border:-drop_border]
@@ -662,12 +667,10 @@ def predict_on_array_cf(model,
                               mode='constant',
                               constant_values=0)
 
-    if report_time:
-        return final_output, time.time()-t0
-    elif return_data_region:
-        return final_output, (ymin, ymax, xmin, xmax)
-    else:
-        return final_output
+    return {"prediction": final_output,
+            "time": time.time() - t0,
+            "nodata_region": (ymin, ymax, xmin, xmax),
+            "metric": metric}
 
 
 def calc_band_stats(fpath : str):

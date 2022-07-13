@@ -252,24 +252,25 @@ if __name__ == '__main__':
                 t2 = time()
                 disk_loading_time += t2 - t1
                 print("Starting prediction on chunk {}/{}".format(idx, nchunks))
-                result, (ymin, ymax, xmin, xmax) = utils.predict_on_array_cf(model,
-                                                                             data,
-                                                                             in_shape=(nbands + args.ndvi, args.width,
-                                                                                       args.width),
-                                                                             out_bands=3,
-                                                                             drop_border=16,
-                                                                             batchsize=args.batchsize,
-                                                                             stride=stride,
-                                                                             device=args.device,
-                                                                             augmentation=args.augmentation,
-                                                                             no_data=0,
-                                                                             verbose=True,
-                                                                             return_data_region=True)
+                result = utils.predict_on_array_cf(model,
+                                                   data,
+                                                   in_shape=(nbands + args.ndvi, args.width,
+                                                   args.width),
+                                                   out_bands=3,
+                                                   drop_border=16,
+                                                   batchsize=args.batchsize,
+                                                   stride=stride,
+                                                   device=args.device,
+                                                   augmentation=args.augmentation,
+                                                   no_data=0,
+                                                   verbose=True)
 
                 t3 = time()
                 inference_time += t3 - t2
 
-                if np.all(np.array((ymin, ymax, xmin, xmax)) == 0):
+                (ymin, ymax, xmin, xmax) = result["nodata_region"]
+
+                if result["prediction"] is None:
                     # in this case the prediction area was all no data, nothing to extract from here
                     print("Empty chunk, skipping remaining steps.")
                     continue
@@ -277,7 +278,7 @@ if __name__ == '__main__':
                 print("Prediction done, extracting polygons for chunk {}/{}.".format(idx, nchunks))
 
                 if args.save_prediction is not None:
-                    utils.array_to_tif(result.transpose(1, 2, 0),
+                    utils.array_to_tif(result["prediction"].transpose(1, 2, 0),
                                        args.save_prediction + "_{}-{}.tif".format(y, x),
                                        transform=utils.xarray_trafo_to_gdal_trafo(chunk.attrs["transform"]),
                                        crs=array.attrs["crs"])
@@ -292,14 +293,14 @@ if __name__ == '__main__':
                     args.sigma /= 2
                     args.min_dist /= 2
 
-                    polygons.extend(extract_polygons(*result[:, ymin:ymax:2, xmin:xmax:2],
+                    polygons.extend(extract_polygons(*result["prediction"][:, ymin:ymax:2, xmin:xmax:2],
                                                      transform=trafo,
                                                      area_min=3,
                                                      **polygon_extraction_params))
 
                 else:
                     trafo = utils.get_xarray_trafo(chunk[:, ymin:ymax, xmin:xmax])
-                    polygons.extend(extract_polygons(*result[:, ymin:ymax, xmin:xmax],
+                    polygons.extend(extract_polygons(*result["prediction"][:, ymin:ymax, xmin:xmax],
                                                      transform=trafo,
                                                      area_min=3,
                                                      **polygon_extraction_params))
