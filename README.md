@@ -1,8 +1,9 @@
+![](https://media.springernature.com/full/springer-static/image/art%3A10.1007%2Fs00521-022-07640-4/MediaObjects/521_2022_7640_Fig3_HTML.png?as=webp)
+
 # Individual Tree Crown Delineation via Neural Networks
 
-![]()
-
-This package performs automatic delineation of individual tree crowns in remote sensing imagery. It has been tested with 30cm WordView-3 images, as well as 5cm aerial images. The contained method is ready for large scale application.
+This package performs automatic delineation of individual tree crowns in remote sensing imagery. It has been tested with 30cm WordView-3 images, as well as 5cm aerial images. 
+The contained method is ready for large scale application and has been published [here](https://link.springer.com/article/10.1007/s00521-022-07640-4).
 
 This package is under development and feedback, reported issues and contributions are very welcome!
 
@@ -111,3 +112,16 @@ Example call for a RGB-NIR image, appending the NDVI and dividing the input by 2
 
 ## 5 Evaluation
 To do
+
+## Citation
+If you use this work in any way, please mention this citation:
+```
+@article{freudenberg2022individual,
+  title={Individual tree crown delineation in high-resolution remote sensing images based on U-Net},
+  author={Freudenberg, Maximilian and Magdon, Paul and Nölke, Nils},
+  journal={NCAA},
+  year={2022},
+  publisher={Springer},
+  doi={https://doi.org/10.1007/s00521-022-07640-4}
+}
+```
