@@ -7,6 +7,12 @@ class InferenceModel(torch.nn.Module):
         self.model = model
 
     def forward(self, x):
-        y = self.model(x)
-        y[:,:2] = torch.sigmoid(y[:,:2])
-        return y
+        output = self.model(x)
+        if len(output) == 2:
+            y, metric = output
+            y[:,:2] = torch.sigmoid(y[:,:2])
+            return y, metric
+        else:
+            y = output
+            y[:,:2] = torch.sigmoid(y[:,:2])
+            return y

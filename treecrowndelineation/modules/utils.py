@@ -565,6 +565,8 @@ def predict_on_array_cf(model,
     original_size = arr.shape
     ymin = 0
     xmin = 0
+    ymax = arr.shape[0]
+    xmax = arr.shape[1]
 
     if no_data is not None:
         # assert arr.shape[-1]==len(no_data_vec), "Length of no_data_vec must match number of channels."
