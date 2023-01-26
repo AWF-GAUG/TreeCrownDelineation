@@ -1,6 +1,7 @@
 .idea/
 *.out
 eval/
+train/
 
 ##### gitignore template #####
 
@@ -142,3 +143,4 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+/train/

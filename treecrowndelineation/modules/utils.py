@@ -139,6 +139,10 @@ def load_filtered_polygons(file: str,
                         continue
 
                 polygon = shape(p["geometry"])
+                if not polygon.is_valid:
+                    print("Skipping invalid polygon: {}".format(polygon))
+                    continue
+
                 intersection = crop.intersection(polygon)
                 if minimum_area < intersection.area < maximum_area:
                     tmp.append(intersection)

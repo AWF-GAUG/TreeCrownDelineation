@@ -37,7 +37,6 @@ def get_parser():
                         required=True)
     parser.add_argument("-m", "--model",
                         dest="model",
-                        type=str,
                         help="Path(s) to the model file(s) to load. "
                              "The model(s) must be loadable via torch.jit.load(), which means that "
                              "it has to be scripted or traced beforehand. For lightning models, use "
@@ -133,6 +132,10 @@ def get_parser():
                         default=None,
                         type=int,
                         help="Stride used when applying the network to the image.")
+    parser.add_argument("--apply-sigmoid",
+                        dest="apply_sigmoid",
+                        action="store_true",
+                        help="When this argument is given, the sigmoid activation will be applied to the mask and outline output.")
     return parser
 
 
@@ -161,9 +164,9 @@ if __name__ == '__main__':
     model_names = args.model
 
     print("Loading model")
-    if isinstance(model_names, str):
-        model = torch.jit.load(args.model).to(args.device)
-    elif isinstance(model_names, list):
+    if len(model_names) == 1:
+        model = torch.jit.load(args.model[0]).to(args.device)
+    elif len(model_names) > 1:
         models = [torch.jit.load(m).to(args.device) for m in model_names]
         model = AveragingModel(models)
     else:
@@ -178,7 +181,8 @@ if __name__ == '__main__':
         model = Sequential(UpsamplingBilinear2d(scale_factor=args.upsample), model, UpsamplingBilinear2d(
                 scale_factor=1. / args.upsample))
 
-    model = InferenceModel(model)  # apply sigmoid to mask and outlines
+    if args.apply_sigmoid:
+        model = InferenceModel(model)  # apply sigmoid to mask and outlines, but not to distance transform
 
     model = DataParallel(model)
     model.eval()
