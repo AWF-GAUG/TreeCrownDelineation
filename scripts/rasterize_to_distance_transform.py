@@ -193,7 +193,7 @@ def work(f, args):
     # print(args.class_col_name)
     # print(args.cls.split(","))
 
-    valid_classes = [int(i) for i in args.cls.split(",") if i not in ("None", "NULL")]
+    valid_classes = [int(i) for i in args.cls.split(",") if i not in ("None", "NULL", "")]
     if "None" in args.cls.split(",") or "NULL" in args.cls.split(","):
         valid_classes.append(None)
     # print(valid_classes)
