@@ -7,6 +7,8 @@ The contained method is ready for large scale application and has been published
 
 This package is under development and feedback, reported issues and contributions are very welcome!
 
+***Update:*** Model weights can be downloaded [here](https://owncloud.gwdg.de/index.php/s/9cUza134XSOwZsB)
+
 ## 1 Installation
 Currently there is no pypi or conda package to install from. You therefore have to clone the package and install manually. Gdal is needed for the installation, which is easiest to install via conda.
 
@@ -90,10 +92,10 @@ The most notable options apart from the number of training steps, batch size etc
 To do
 
 ## 3 Using pre-trained models
-To do
+The weights of pre-trained models can be found [here](https://owncloud.gwdg.de/index.php/s/9cUza134XSOwZsB). You have to download them manually. The weights can be used by the inference script described below. Apart from that you can load the model via `torch.jit.load()`.
 
 ## 4 Application / Inference
-Applying a trained neural network is rather simple by using the `inference.py` script, although the number of command line arguments is a bit overwhelming. We have to tell the script, which polygon extraction setting we want to use; look at the script's documentation to find out more by typing `inference.py -h`.
+Applying a trained neural network is rather simple by using the `inference.py` script, although the number of command line arguments is a bit overwhelming. We have to tell the script, which polygon extraction setting we want to use; look at the script's documentation to find out more by typing `inference.py -h`. It is possible to use several models at once, averaging the results, which improves performance.
 
 Optional parameters (look at the paper for more info):
 - `-ndvi` whether or not to concat the NDVI
@@ -108,7 +110,7 @@ Optional parameters (look at the paper for more info):
 
 Example call for a RGB-NIR image, appending the NDVI and dividing the input by 255:
 
-`inference.py -i <large input image here> -o <output file path and name> -m <path to model file> -ndvi -red 0 -ndvi 3 --divide-by 255`
+`inference.py -i <large input image here> -o <output file path and name> -m <path to model file(s)> -ndvi -red 0 -ndvi 3 --divide-by 255`
 
 ## 5 Evaluation
 To do
