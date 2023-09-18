@@ -1,4 +1,5 @@
 ![](https://media.springernature.com/full/springer-static/image/art%3A10.1007%2Fs00521-022-07640-4/MediaObjects/521_2022_7640_Fig3_HTML.png?as=webp)
+![](https://media.springernature.com/full/springer-static/image/art%3A10.1007%2Fs00521-022-07640-4/MediaObjects/521_2022_7640_Fig5_HTML.png?as=webp)
 
 # Individual Tree Crown Delineation via Neural Networks
 
