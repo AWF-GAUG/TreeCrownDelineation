@@ -3,7 +3,7 @@ pytorch_lightning
 numpy
 segmentation_models_pytorch
 albumentations
-xarray
+xarray==0.17
 rasterio
 rioxarray
 shapely
