@@ -168,9 +168,8 @@ def save_polygons(polygons: list, dest_fname: str, crs, driver: str = "SQLite", 
 
     if os.path.exists(dest_fname):
         uuid = str(uuid4())[:4]
-        head, suff = dest_fname.split(".")
+        head, suff = os.path.splitext(dest_fname)
         head = head + "_"
-        suff = "." + suff
         dest_fname_new = uuid.join([head, suff])
         print("File {} already exists, saving as {}.".format(dest_fname, dest_fname_new))
         dest_fname = dest_fname_new

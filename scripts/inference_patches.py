@@ -8,6 +8,7 @@ import traceback
 import xarray as xr
 import numpy as np
 import pickle
+import rioxarray
 from torch.nn import DataParallel
 from torch.nn import UpsamplingBilinear2d, Sequential
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -139,17 +140,22 @@ def get_parser():
     return parser
 
 
-def get_crs(array):
-    crs_ = array.attrs["crs"]
-    if "epsg" in crs_:
-        crs_ = crs.from_epsg(crs_.split(':')[-1])
-    else:
-        crs_ = crs.from_string(crs_)
-    return crs_
+def get_crs_wkt(array):
+    return array.rio.crs.wkt
+
+
+def get_transform(array):
+    return array.rio.transform()
+
+
+# n is chunksize
+def split_into_chunks(list_, n):
+    return [[list_[i * n:(i + 1) * n] for i in range((len(list_) + n - 1) // n )]]
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
+    # args = get_parser().parse_args()
+    args = get_parser().parse_args("-d cpu -i /data_hdd/bkg/clip_2021/1000.tif /data_hdd/bkg/clip_2023/10001.tif -o /data_hdd/bkg/vector/clip_2023/ -m /home/max/dr/models/bkg/Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt --div 255 --rescale-ndvi --ndvi --apply-sigmoid -a -w 512 --simplify 0.1".split())
 
     polygon_extraction_params = {"min_dist"          : args.min_dist,
                                  "mask_exp"          : 2,
@@ -196,7 +202,8 @@ if __name__ == '__main__':
 
     for idx, img in enumerate(args.input_files):
         filename = os.path.basename(img).split('.')[0]
-        array = xr.open_rasterio(img)
+        # array = xr.open_rasterio(img)
+        array = rioxarray.open_rasterio(img)
         nbands, height, width = array.shape
 
         polygons = []
@@ -235,8 +242,8 @@ if __name__ == '__main__':
         if args.save_prediction is not None:
             utils.array_to_tif(result["prediction"].transpose(1, 2, 0),
                                os.path.abspath(args.save_prediction) + '/' + filename + "_pred.tif",
-                               transform=utils.xarray_trafo_to_gdal_trafo(chunk.attrs["transform"]),
-                               crs=array.attrs["crs"])
+                               transform=utils.xarray_trafo_to_gdal_trafo(get_transform(chunk)),
+                               crs=get_crs_wkt(array))
 
         t4 = time()
 
@@ -254,7 +261,7 @@ if __name__ == '__main__':
                                              **polygon_extraction_params))
 
         else:
-            trafo = utils.get_xarray_trafo(chunk)
+            trafo = get_transform(chunk)
             polygons.extend(extract_polygons(*result["prediction"],
                                              transform=trafo,
                                              area_min=3,
@@ -262,7 +269,7 @@ if __name__ == '__main__':
         t5 = time()
         postprocessing_time += t5 - t4
 
-        crs_ = get_crs(array)
+        crs_ = get_crs_wkt(array)
 
         utils.save_polygons(polygons,
                             os.path.abspath(args.output_path) + '/' + filename + '.sqlite',
