@@ -27,8 +27,8 @@ arch = "Unet-resnet18"
 width = 256
 batchsize = 16
 in_channels = 8
-devices = 1
-accelerator = "auto"  # or cuda or cpu, see lightning docs
+devices = 1  # number of gpus, if you have multiple
+accelerator = "auto"  # or gpu or cpu, see lightning docs
 max_epochs = 30 + 60 - 1
 lr = 3E-4
 
