@@ -11,17 +11,18 @@ This package is under development and feedback, reported issues and contribution
 ***Update:*** Model weights can be downloaded [here](https://owncloud.gwdg.de/index.php/s/9cUza134XSOwZsB)
 
 ## 1 Installation
-Currently there is no pypi or conda package to install from. You therefore have to clone the package and install manually. Gdal is needed for the installation, which is easiest to install via conda.
+Currently there is no pypi or conda package to install from. You therefore have to clone the package and install manually. Gdal is needed for the installation, which is easiest to install via conda. Currently, you also have to install pytorch via conda, as the pip version seems broken as of 2024-01-12.
 
 ```
 # (optional) create new conda env
 conda create -n <env-name>
 conda activate <env-name>
-conda install gdal  # install gdal upfront
+# install gdal and pytorch upfront, adapt to the latest cuda version if needed
+conda install gdal pytorch torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
 
 # now there are two options: installation via pip or manual
 
-# 1) installation via pip
+# 1) install via pip, including the remaining dependencies
 pip install git+ssh://git@github.com/AWF-GAUG/TreeCrownDelineation.git
 
 # 2) manual install with latest source
