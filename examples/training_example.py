@@ -27,8 +27,8 @@ arch = "Unet-resnet18"
 width = 256
 batchsize = 16
 in_channels = 8
-gpus = 2
-backend = "dp"
+devices = 1
+accelerator = "auto"  # or cuda or cpu, see lightning docs
 max_epochs = 30 + 60 - 1
 lr = 3E-4
 
@@ -79,9 +79,9 @@ data = InMemoryDataModule(rasters,
 model = TreeCrownDelineationModel(in_channels=in_channels, lr=lr)
 
 #%%
-trainer = Trainer(gpus=gpus,
-                  distributed_backend=backend,
-                  logger=logger,
+trainer = Trainer(devices=devices,
+                  accelerator=accelerator,
+                  logger=logger,  
                   callbacks=callbacks,
                   # checkpoint_callback=False,  # set this to avoid logging into the working directory
                   max_epochs=max_epochs)
