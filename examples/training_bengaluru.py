@@ -89,8 +89,7 @@ if __name__ == '__main__':
 
     mask_model = SegmentationModel(in_channels=in_channels, lr=lr)
 
-    trainer = Trainer(gpus=gpus,
-                      distributed_backend=backend,
+    trainer = Trainer(accelerator="auto",
                       logger=logger,
                       callbacks=callbacks,
                       # checkpoint_callback=False,  # set this to avoid logging into the working directory
