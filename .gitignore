@@ -2,7 +2,8 @@
 *.out
 eval/
 train/
-
+multicls_logs/
+saved_models/
 ##### gitignore template #####
 
 # Byte-compiled / optimized / DLL files

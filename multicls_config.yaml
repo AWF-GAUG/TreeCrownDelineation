@@ -1,0 +1,54 @@
+training:
+  experiment_name: test_1
+  backend: dp
+  device: 'cuda'
+  width: 256
+  batchsize: 32
+  accelerators: 1
+  arch_options:
+    - Unet
+    # - Unet++
+    # - DeepLabV3
+  backbone_options:
+    # - resnet18
+    # - resnet34
+    # - resnet50
+    # - resnet101
+    # - se_resnet50
+    # - se_resnet101
+    # - densenet121
+    # - densenet169
+    # - mit_b1
+    # - mit_b2
+    # - densenet201
+    # - efficientnet-b1
+    # - efficientnet-b4
+    # - efficientnet-b7
+    # - vgg13
+    # - vgg16
+    # - vgg19
+  max_epochs_options:
+    - 200
+  lr: 0.0001
+  IN_CHS: 5
+  OUT_CHS: 14
+  logdir: "./multicls_logs"
+  model_save_path: "./saved_models"
+  mcls_img_paths: "/data_hdd/gartow/training_data/tiles_multiclass"
+  mcls_msk_paths: "/data_hdd/gartow/training_data/masks_multiclass"
+  concatenate_ndvi: True
+  red: 2
+  nir: 3
+  rescale_ndvi: False
+  training_split : 0.75
+  apply_softmax : False
+  accelerator: "gpu"
+  devices: 1
+  num_nodes: 1
+  monitor_metric: "val/loss_mask"
+  save_last: True
+  save_top_k: 2
+
+# validation:
+#   val_pred_labels_path: './val_predicted_labels.npy'
+#   val_gt_labels_path: './val_ground_truth_labels.npy'

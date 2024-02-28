@@ -86,7 +86,8 @@ class InMemoryRSDataset:
 
         arr.data /= self.divide_by  # dividing the array directly loses information on transformation etc?!?? wtf?
 
-        self.rasters.append(arr)
+        # self.rasters.append(arr)
+        self.rasters.append(arr[:,:,:3])
         self.native_bands = np.arange(self.num_bands)
         self.weights = self.get_raster_weights()
 
@@ -132,7 +133,8 @@ class InMemoryRSDataset:
         for i, m in enumerate(self.masks):
             self.masks[i].data[:] = f(m.data).astype(self.dtype)
 
-    def concatenate_ndvi(self, red=3, nir=4, rescale=False):
+    # def concatenate_ndvi(self, red=3, nir=4, rescale=False): # changed band index as zero indexing seems to be working here
+    def concatenate_ndvi(self, red=2, nir=3, rescale=False):
         for i, r in enumerate(self.rasters):
             # res = ndvi_xarray(r, red, nir).expand_dims(dim="band", axis=self.chax)
             if rescale:

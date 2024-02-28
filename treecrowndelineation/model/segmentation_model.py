@@ -15,6 +15,7 @@ arch_dict = {name: m for name, m in zip(arch_names, architectures)}
 class SegmentationModel(pl.LightningModule):
     def __init__(self,
                  in_channels: int = 4,
+                 out_channels: int = 1,
                  architecture: str = "Unet",
                  backbone: str = "resnet18",
                  lr: float = 1E-4,
@@ -37,7 +38,7 @@ class SegmentationModel(pl.LightningModule):
         super().__init__()
         arch = arch_dict[architecture]
         self.model = arch(in_channels=in_channels,
-                          classes=2,
+                          classes=out_channels,
                           encoder_name=backbone)
         # set batchnorm momentum to tensorflow standard, which works better
         utils.set_batchnorm_momentum(self.model, 0.99)

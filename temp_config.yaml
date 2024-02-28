@@ -1,0 +1,35 @@
+training:
+  IN_CHS: 3
+  OUT_CHS: 14
+  accelerator: gpu
+  accelerators: 1
+  apply_softmax: false
+  arch: Unet
+  arch_options:
+  - Unet
+  backbone: mit_b1
+  backbone_options:
+  - mit_b1
+  backend: dp
+  batchsize: 32
+  concatenate_ndvi: false
+  device: cuda
+  devices: 1
+  experiment_name: test_1
+  logdir: ./multicls_logs
+  lr: 0.0001
+  max_epochs: 200
+  max_epochs_options:
+  - 200
+  mcls_img_paths: /data_hdd/gartow/training_data/tiles_multiclass
+  mcls_msk_paths: /data_hdd/gartow/training_data/masks_multiclass
+  model_save_path: ./saved_models
+  monitor_metric: val/loss_mask
+  nir: 3
+  num_nodes: 1
+  red: 2
+  rescale_ndvi: false
+  save_last: true
+  save_top_k: 2
+  training_split: 0.75
+  width: 256

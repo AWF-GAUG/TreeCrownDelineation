@@ -6,7 +6,8 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from ..dataloading import datasets as ds
 from ..modules.utils import dilate_img
-
+import torch
+from collections import Counter
 
 class InMemoryDataModule(pl.LightningDataModule):
     def __init__(self,
@@ -101,8 +102,9 @@ class InMemoryDataModule(pl.LightningDataModule):
         self.train_ds = None
         self.val_ds = None
         self.rescale_ndvi = rescale_ndvi
+        self.class_weights = None
 
-    def setup(self, unused=0):  # throws error if arg is removed
+    def setup(self, stage=None):  # throws error if arg is removed
         if self.shuffle:
             for x in (self.rasters, *self.targets):
                 if self.deterministic:
@@ -173,19 +175,48 @@ class InMemoryDataModule(pl.LightningDataModule):
         # dilate the tree crown outlines to get a stronger training signal
         if self.dilate_second_target_band:
             for m in self.train_ds.masks:
-                m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+                    m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
             if self.training_split < 1 or self.val_indices is not None:
                 for m in self.val_ds.masks:
-                    m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+                        m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+        
+        # calculate class weights
+        # if stage == 'fit' or stage is None:
+        #     self.calculate_class_weights()
+    
+    
+    # function to calculate class weights
+    def calculate_class_weights(self):
+        # Flatten the label arrays and convert to tuples (which are hashable)
+        labels = [tuple(label.flatten()) for _, label in self.train_ds]
+        # Flatten the list of tuples to count each class occurrence
+        flat_labels = [item for sublist in labels for item in sublist]
+        class_counts = Counter(flat_labels)
+
+        total_count = sum(class_counts.values())
+        num_classes = len(class_counts)
+
+        self.class_weights = torch.tensor(
+            [total_count / (num_classes * class_counts.get(i, 1)) for i in range(num_classes)], 
+            dtype=torch.float
+        )
+        
+        print('Class weights calculated!')
+
+
+    def get_class_weights(self):
+        if self.class_weights is None:
+            raise ValueError("Class weights have not been calculated yet.")
+        return self.class_weights
 
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, drop_last=True, pin_memory=True)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, drop_last=True, pin_memory=True,num_workers=4)
 
     def val_dataloader(self):
         if self.training_split == 1 and self.val_indices is None:
             return None
         else:
-            return DataLoader(self.val_ds, batch_size=self.batch_size, drop_last=True, pin_memory=True)
+            return DataLoader(self.val_ds, batch_size=self.batch_size, drop_last=True, pin_memory=True,num_workers=4)
 
 
 class InMemoryMaskDataModule(InMemoryDataModule):
