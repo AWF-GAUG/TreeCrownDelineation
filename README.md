@@ -23,7 +23,7 @@ conda install gdal pytorch torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
 # now there are two options: installation via pip or manual
 
 # 1) install via pip, including the remaining dependencies
-pip install git+ssh://git@github.com/AWF-GAUG/TreeCrownDelineation.git
+pip install git+https://git@github.com/AWF-GAUG/TreeCrownDelineation.git
 
 # 2) manual install with latest source
 cd <path where you want to keep the package> 
