@@ -363,7 +363,7 @@ def predict_on_array(model,
         batchsize: number of images to process in parallel
         dtype: desired output type (default: float32)
         augmentation: whether to average over rotations and mirrorings of the image or not. triples computation time.
-        no_data: a no-data vector. its length must match the number of layers in the input array.
+        no_data: a no-data value. It's used to compute the area containing data via the first input image channel.
         verbose: whether or not to display progress
         report_time: if true, returns (result, execution time)
 
