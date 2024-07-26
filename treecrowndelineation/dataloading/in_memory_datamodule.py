@@ -102,7 +102,7 @@ class InMemoryDataModule(pl.LightningDataModule):
         self.val_ds = None
         self.rescale_ndvi = rescale_ndvi
 
-    def setup(self, unused=0):  # throws error if arg is removed
+    def setup(self, stage=None):  # throws error if arg is removed
         if self.shuffle:
             for x in (self.rasters, *self.targets):
                 if self.deterministic:
