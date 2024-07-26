@@ -225,7 +225,7 @@ def read_img(input_file, dim_ordering="HWC", dtype='float32', band_mapping=None,
 
 def array_to_tif(array, dst_filename, num_bands='multi', save_background=True, src_raster: str = "", transform=None,
                  crs=None):
-    """ Takes a numpy array and writes a tif. Uses deflate compression.
+    """ Takes a numpy array and writes a tif. Uses ZSTD compression.
 
     Args:
         array: numpy array
@@ -258,7 +258,7 @@ def array_to_tif(array, dst_filename, num_bands='multi', save_background=True, s
     datatype_mapping = {'byte': gdal.GDT_Byte, 'uint8': gdal.GDT_Byte, 'uint16': gdal.GDT_UInt16,
                         'uint32': gdal.GDT_UInt32, 'int8': gdal.GDT_Byte, 'int16': gdal.GDT_Int16,
                         'int32': gdal.GDT_Int32, 'float16': gdal.GDT_Float32, 'float32': gdal.GDT_Float32}
-    options = ["COMPRESS=DEFLATE"]
+    options = ["COMPRESS=ZSTD", "BIGTIFF=YES", "PREDICTOR=2", "TILED=YES"]
     if datatype == "float16":
         options.append("NBITS=16")
 

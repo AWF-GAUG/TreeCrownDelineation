@@ -15,7 +15,7 @@ def get_parser():
     parser = ArgumentParser(description="Loads multiple raster and one vector file, then rasterizes the vector file within the \
                                          extent of the rasters with the same resolution. Uses gdal_rasterize \
                                          under the hood, but provides some more features like specifying which classes \
-                                         to rasterize into which layer of the output. If you want to infer the output \
+                                         to rasterize with which value in the output. If you want to infer the output \
                                          file names, the input file name suffixes have to be delimited by an '_'.",
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument("-i", "--input_files",
@@ -59,8 +59,7 @@ def get_parser():
                        dest="mapping",
                        default=None,
                        type=str,
-                       nargs='+',
-                       help="Defines which class is rasterized into which layer. Has to be given in the form \
+                       help="Defines which class is rasterized to which value. Has to be given in the form \
                        'class1 layer1 class2 layer1 class4 layer2...' separated by spaces. \
                        Layer indexing starts with 1. \
                        One of --num_classes or --mapping has to be given.")
@@ -115,7 +114,7 @@ def rasterize(outfile: str, clip_raster: str, shp: str, class_col_name: str, cla
                             )
 
     out_drv = gdal.GetDriverByName("GTiff")
-    out_drv.CreateCopy(outfile, out_raster_ds, 1, options=["COMPRESS=ZSTD", "PREDICTOR=2"])
+    out_drv.CreateCopy(outfile, out_raster_ds, 1, options=["COMPRESS=ZSTD", "PREDICTOR=2", "TILED=YES"])
 
 
 #%%

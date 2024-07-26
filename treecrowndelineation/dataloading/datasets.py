@@ -1,3 +1,4 @@
+import torch
 import ctypes
 import xarray as xr
 import numpy as np
@@ -11,7 +12,7 @@ class InMemoryRSDataset:
     """In memory remote sensing dataset for image segmentation."""
 
     def __init__(self, raster_files: list, mask_files: list, dim_ordering="HWC", dtype="float32", divide_by=1,
-                 overwrite_nan_with_zeros=True):
+                 overwrite_nan_with_zeros=True, classes=None):
         """Creates a dataset containing images and masks which resides in memory.
 
         Args:
@@ -22,6 +23,9 @@ class InMemoryRSDataset:
             dim_ordering: One of HWC or CHW; how rasters and masks are stored in memory. The albumentations library
                 needs HWC, so this is the default. CHW support could be bugged.
             dtype: Data type for storing rasters and masks
+            divide_by (number): The loaded rasters are divided by this value
+            overwrite_nan_with_zeros (bool): Whether to replace nans with zeros in the masks. Default is true.
+            classes (list): List of classes in the image. So far only contiguous ranges have been tested.
         """
         # initial sanity checks
         assert len(raster_files) > 0, "List of given rasters is empty."
@@ -59,6 +63,11 @@ class InMemoryRSDataset:
         self.lateral_ax = np.array((1,2)) if self.chax==0 else np.array((0,1))
 
         self.load_data()
+        if classes is None:
+            self.classes = np.sort(np.unique(np.concatenate([np.array(m).flatten() for m in self.masks])))
+        else:
+            self.classes = classes
+        self.num_classes = len(self.classes)
 
     def load_raster(self, file: str, used_bands: list = None):
         """Loads a raster from disk.
@@ -69,7 +78,6 @@ class InMemoryRSDataset:
         """
         arr = xr.open_rasterio(file).load().astype(self.dtype)  # eagerly load the image from disk via_load
         arr.close()  # dont know if needed, but to be sure...
-
 
         num_bands = arr.shape[0]
         if len(self.rasters) == 0: self.num_bands = num_bands
@@ -149,6 +157,18 @@ class InMemoryRSDataset:
         weights /= np.sum(weights)
         return weights
 
+    def get_class_weights(self):
+        counts = np.zeros(self.num_classes)
+        for (i, cls) in enumerate(self.classes):
+            counts[i] += np.sum([np.sum(m[0].data == cls) for m in self.masks])
+
+        total = np.sum(counts)
+        weights = total / counts
+        weights = np.clip(weights, 0, weights[weights != np.inf].max())
+        wsum = np.sum(weights)
+        weights /= wsum
+        return torch.from_numpy(weights)
+
     def calculate_dataset_mean_stddev(self, estimate=True):
         """Calculates the mean and standard deviation of the whole dataset."""
         mean = np.zeros(self.num_bands)
@@ -186,8 +206,14 @@ class InMemoryRSDataset:
 
 class InMemoryRSTorchDataset(InMemoryRSDataset, IterableDataset):
     def __init__(self, raster_files: list, mask_files: list, augmentation, cutout_size, dim_ordering="HWC",
-                 dtype="float32", divide_by=1):
-        super().__init__(raster_files, mask_files, dim_ordering, dtype, divide_by)
+                 dtype="float32", divide_by=1, overwrite_nan_with_zeros=True, classes=None):
+        """ See documentation of InMemoryRSDataset.
+
+        Args:
+            cutout_size: List or tuple with lateral cutout size
+            augmentation: "Albumentations" augmentations to apply
+        """
+        super().__init__(raster_files, mask_files, dim_ordering, dtype, divide_by, overwrite_nan_with_zeros, classes)
         self.augment = augmentation  # or (lambda x, y: (x, y))
         self.cutout_size = cutout_size
 

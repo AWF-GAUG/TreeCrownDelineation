@@ -111,11 +111,15 @@ def rasterize(source_raster, features: list, dim_ordering: str = "HWC"):
     return arr
 
 
-def clip_and_save(feature_enum, dest_fname_base, src_fname, src_xarray, lock, restrict_to_intersection=True, mask=False, no_overwrite=False):
+def clip_and_save(feature_enum, dest_fname_base, src_fname, src_xarray, lock, offset=0, name_column="", restrict_to_intersection=True, mask=False, no_overwrite=False):
     j, feature = feature_enum
     i = feature["id"] if "id" in feature else j
     src_bbox = extent_to_poly(src_xarray)
-    dest_fname = dest_fname_base + "_{}.tif".format(i)
+    if name_column == "":
+        dest_fname = dest_fname_base + "_{}.tif".format(int(i)+offset)
+    else:
+        name = feature["properties"][name_column]
+        dest_fname = dest_fname_base + "_{}_{}.tif".format(int(i) + offset, name)
     print(dest_fname)
     if os.path.exists(dest_fname) and no_overwrite:
         return
@@ -137,7 +141,7 @@ def clip_and_save(feature_enum, dest_fname_base, src_fname, src_xarray, lock, re
 
             result.rio.to_raster(dest_fname,
                                  driver="GTiff",
-                                 compress="DEFLATE",
+                                 compress="ZSTD",
                                  alpha="no")
             del mask_arr
             del result
@@ -180,8 +184,11 @@ def get_parser():
     parser.add_argument("-shp", "--shapefile",
                         dest="shpfile",
                         type=str,
-                        help="Shapefile to be iterated over (eg ESRI, SQLite).",
-                        required=True)
+                        help="Shapefile to be iterated over (eg ESRI, SQLite).",)
+    parser.add_argument("--name-column",
+                        type=str,
+                        default="",
+                        help="Name of the column that contains fields that should be part of the file name.")
     parser.add_argument("-r", "--restrict",
                         dest="r",
                         action='store_true',
@@ -207,6 +214,11 @@ def get_parser():
                         default=1,
                         help="Controls how many features each process handles at once.",
                         required=False)
+    parser.add_argument("--file-index-offset",
+                        dest="offset",
+                        type=int,
+                        default=0,
+                        help="An optional offset that can be added to the generated output file name index.")
     return parser
 
 
@@ -249,6 +261,8 @@ if __name__ == '__main__':
                           file_,
                           source_raster,
                           None,
+                          offset=args.offset,
+                          name_column=args.name_column,
                           restrict_to_intersection=args.r,
                           mask=args.m,
                           no_overwrite=args.no_overwrite)
