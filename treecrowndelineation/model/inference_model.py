@@ -8,7 +8,7 @@ class InferenceModel(torch.nn.Module):
 
     def forward(self, x):
         output = self.model(x)
-        if len(output) == 2:
+        if isinstance(output, tuple) and len(output) == 2:
             y, metric = output
             y[:,:2] = torch.sigmoid(y[:,:2])
             return y, metric
